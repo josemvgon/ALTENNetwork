@@ -1,5 +1,5 @@
 //
-//  NetworkResponse.swift
+//  NetworkDataResponse.swift
 //  Rafita_app
 //
 //  Created by Rafael FERNANDEZ on 17/1/22.
@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct NetworkResponse {
+public struct NetworkDataResponse {
     let data: Data
     let response: URLResponse
     
@@ -18,23 +18,23 @@ public struct NetworkResponse {
     }
 }
 
-extension NetworkResponse {
+extension NetworkDataResponse {
     public func jsonDecode<T: Decodable>(_ type: T.Type, decoder: JSONDecoder = JSONDecoder()) throws -> T {
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
-            throw NetworkError.response(.decodeError(error))
+            throw NetworkError.responseData(.decodeError(error))
         }
     }
 }
 
-extension NetworkResponse {
+extension NetworkDataResponse {
     public func validate(correctRange range: HTTPCodes = .success) throws -> Self {
         guard let response = response as? HTTPURLResponse else {
-            throw NetworkResponseError.invalidResponse(self)
+            throw NetworkError.responseData(.invalidResponse(self))
         }
         guard range ~= response.statusCode else {
-            throw NetworkResponseError.invalidStatusCode(self, response.statusCode)
+            throw NetworkError.responseData(.invalidStatusCode(self, response.statusCode))
         }
         return self
     }

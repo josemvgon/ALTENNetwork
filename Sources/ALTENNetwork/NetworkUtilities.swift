@@ -8,14 +8,6 @@
 
 import Foundation
 
-public final class NativeSwiftClass {
-    public init() { }
-    
-    dynamic public func original() {
-        print("original")
-    }
-}
-
 public typealias HTTPCode = Int
 public typealias HTTPCodes = Range<HTTPCode>
 
@@ -46,11 +38,15 @@ public struct NetworkHttpMethod: RawRepresentable {
     public let rawValue: String
     
     public static let get = NetworkHttpMethod(rawValue: "GET")
+    public static let head = NetworkHttpMethod(rawValue: "HEAD")
     public static let post = NetworkHttpMethod(rawValue: "POST")
     public static let put = NetworkHttpMethod(rawValue: "PUT")
     public static let delete = NetworkHttpMethod(rawValue: "DELETE")
-    public static let head = NetworkHttpMethod(rawValue: "HEAD")
+    public static let trace = NetworkHttpMethod(rawValue: "TRACE")
+    public static let options = NetworkHttpMethod(rawValue: "OPTIONS")
+    public static let connect = NetworkHttpMethod(rawValue: "CONNECT")
     public static let patch = NetworkHttpMethod(rawValue: "PATCH")
+    public static let move = NetworkHttpMethod(rawValue: "MOVE")
     public static func other(_ method: String) -> NetworkHttpMethod { NetworkHttpMethod(rawValue: method) }
     
     public init(rawValue: String) {

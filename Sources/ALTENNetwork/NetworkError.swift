@@ -10,17 +10,33 @@ import Foundation
 
 public enum NetworkError: Error {
     case request(NetworkRequestError)
-    case response(NetworkResponseError)
+    case responseData(NetworkDataResponseError)
+    case responseDownload(NetworkDownloadResponseError)
     case unknown
 }
 
-public enum NetworkResponseError: Error {
-    case invalidResponse(NetworkResponse)
-    case invalidStatusCode(NetworkResponse, Int)
+public enum NetworkDataResponseError: Error {
+    case invalidResponse(NetworkDataResponse)
+    case invalidStatusCode(NetworkDataResponse, Int)
     case decodeError(Error)
+}
+
+public enum NetworkDownloadResponseError: Error {
+    case invalidResponse(NetworkDownloadResponse)
+    case invalidStatusCode(NetworkDownloadResponse, Int)
 }
 
 public enum NetworkRequestError: Error {
     case invalidURL
     case encodeError(Error)
+}
+
+
+public enum NetworkReachabilityError: Error {
+    case failedToCreateWithAddress(sockaddr, Int32)
+    case failedToCreateWithHostname(String, Int32)
+    case unableToSetCallback(Int32)
+    case unableToSetDispatchQueue(Int32)
+    case unableToGetFlags(Int32)
+    case alreadyRunning
 }

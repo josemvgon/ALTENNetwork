@@ -12,10 +12,10 @@ open class NetworkRequest {
     public let urlRequest: URLRequest
     
     public init(url: URL,
-         httpMethod: NetworkHttpMethod = .get,
-         headers: [NetworkHeader]? = nil,
-         query: [NetworkQuery]? = nil,
-         httpBody: Data? = nil) throws {
+                httpMethod: NetworkHttpMethod = .get,
+                headers: [NetworkHeader]? = nil,
+                query: [NetworkQuery]? = nil,
+                httpBody: Data? = nil) throws {
         
         guard var components = URLComponents(string: url.absoluteString) else { throw NetworkError.request(.invalidURL) }
         if let query = query {
@@ -32,24 +32,24 @@ open class NetworkRequest {
     }
     
     public convenience init(url: String,
-         httpMethod: NetworkHttpMethod = .get,
-         headers: [NetworkHeader]? = nil,
-         query: [NetworkQuery]? = nil,
-         httpBody: Data? = nil) throws {
+                            httpMethod: NetworkHttpMethod = .get,
+                            headers: [NetworkHeader]? = nil,
+                            query: [NetworkQuery]? = nil,
+                            httpBody: Data? = nil) throws {
         guard let url = URL(string: url) else { throw NetworkError.request(.invalidURL) }
         try self.init(url: url, httpMethod: httpMethod, headers: headers, query: query, httpBody: httpBody)
     }
     
     public convenience init<T: Encodable>(url: URL,
-         httpMethod: NetworkHttpMethod,
-         headers: [NetworkHeader]? = nil,
-         query: [NetworkQuery]? = nil,
-         httpBody: T? = nil,
-         encoder: JSONEncoder = JSONEncoder()) throws {
+                                          httpMethod: NetworkHttpMethod,
+                                          headers: [NetworkHeader]? = nil,
+                                          query: [NetworkQuery]? = nil,
+                                          jsonBody: T? = nil,
+                                          encoder: JSONEncoder = JSONEncoder()) throws {
         var httpBodyData: Data?
-        if let httpBody = httpBody {
+        if let jsonBody = jsonBody {
             do {
-                httpBodyData = try encoder.encode(httpBody)
+                httpBodyData = try encoder.encode(jsonBody)
             } catch {
                 throw NetworkError.request(.encodeError(error))
             }
@@ -58,13 +58,13 @@ open class NetworkRequest {
     }
     
     public convenience init<T: Encodable>(url: String,
-         httpMethod: NetworkHttpMethod,
-         headers: [NetworkHeader]? = nil,
-         query: [NetworkQuery]? = nil,
-         httpBody: T? = nil,
-         encoder: JSONEncoder = JSONEncoder()) throws {
+                                          httpMethod: NetworkHttpMethod,
+                                          headers: [NetworkHeader]? = nil,
+                                          query: [NetworkQuery]? = nil,
+                                          jsonBody: T? = nil,
+                                          encoder: JSONEncoder = JSONEncoder()) throws {
         guard let url = URL(string: url) else { throw NetworkError.request(.invalidURL) }
-        try self.init(url: url, httpMethod: httpMethod, headers: headers, query: query, httpBody: httpBody)
+        try self.init(url: url, httpMethod: httpMethod, headers: headers, query: query, jsonBody: jsonBody)
     }
     
     public init(urlRequest: URLRequest) {
