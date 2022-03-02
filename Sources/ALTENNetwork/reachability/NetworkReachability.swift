@@ -1,15 +1,54 @@
 //
 //  NetworkReachability.swift
-//  Rafita_app
 //
-//  Created by Rafael FERNANDEZ on 17/1/22.
-//  Copyright © 2022 company_app. All rights reserved.
+//  Copyright © 2022 ALTEN. All rights reserved.
 //
 
 import SystemConfiguration
 import Foundation
 
-public class NetworkReachability {
+/**
+ Permite la suscripción a un `AsyncThrowingStream<NetworkReachability, Error>` que notificará de los cambios de red que se produzcan en el dispositivo.
+ 
+ Ejemplo:
+ 
+ En un contexto no asíncrono
+ ```
+ func checkConnection() {
+     if let reachability = try? NetworkReachability(), let notifier = try? reachability.startNotifier() {
+         self.reachability = reachability // retain `reachability`
+         Task {
+             for try await reachability in notifier {
+                 print("Connection type: \(reachability.connection.rawValue)")
+             }
+             print("Finish Reachability")
+         }
+     }
+ }
+ 
+ ```
+ ---
+ En un contexto asíncrono
+ ```
+ func checkConnection() async throws {
+     if let reachability = try? NetworkReachability(), let notifier = try? reachability.startNotifier() {
+         self.reachability = reachability // retain `reachability`
+         Task {
+             for try await reachability in notifier {
+                 print("Connection type: \(reachability.connection.rawValue)")
+             }
+             print("Finish Reachability")
+         }
+     }
+ }
+ ```
+ ---
+ La creación del objeto `try? NetworkReachability()` hay que retenerla en memoria para mantener la suscripción.
+ 
+ La creación del objeto `let notifier = try? reachability.startNotifier()` se debe realizar en una nueva `Task`, ya que a la hora de realizar el `for-await-in` la `Task` se quedará en ejecución y no terminará hasta que finalizemos el loop manualmente o a través de la liberación de memoria.
+ 
+ */
+public final class NetworkReachability {
 
     public enum Connection: String {
         case unavailable = "No Connection"
@@ -20,9 +59,7 @@ public class NetworkReachability {
     /// Set to `false` to force NetworkReachability.connection to .none when on cellular connection (default value `true`)
     public var allowsCellularConnection: Bool
 
-    // The notification center on which "reachability changed" events are being posted
-    public var notificationCenter: NotificationCenter = NotificationCenter.default
-
+    /// Tipo de conexión actual
     public var connection: Connection {
         if flags == nil {
             try? setReachabilityFlags()
@@ -45,7 +82,10 @@ public class NetworkReachability {
         #endif
     }()
 
+    
+    /// Indica si actualmente se ya se está notificando el cambio de red
     public fileprivate(set) var notifierRunning = false
+    
     fileprivate let reachabilityRef: SCNetworkReachability
     fileprivate let reachabilitySerialQueue: DispatchQueue
     fileprivate let notificationQueue: DispatchQueue?
@@ -71,7 +111,7 @@ public class NetworkReachability {
                             targetQueue: DispatchQueue? = nil,
                             notificationQueue: DispatchQueue? = .main) throws {
         guard let ref = SCNetworkReachabilityCreateWithName(nil, hostname) else {
-            throw NetworkReachabilityError.failedToCreateWithHostname(hostname, SCError())
+            throw NetworkError.Reachability.failedToCreateWithHostname(hostname, SCError())
         }
         self.init(reachabilityRef: ref, queueQoS: queueQoS, targetQueue: targetQueue, notificationQueue: notificationQueue)
     }
@@ -84,7 +124,7 @@ public class NetworkReachability {
         zeroAddress.sa_family = sa_family_t(AF_INET)
 
         guard let ref = SCNetworkReachabilityCreateWithAddress(nil, &zeroAddress) else {
-            throw NetworkReachabilityError.failedToCreateWithAddress(zeroAddress, SCError())
+            throw NetworkError.Reachability.failedToCreateWithAddress(zeroAddress, SCError())
         }
 
         self.init(reachabilityRef: ref, queueQoS: queueQoS, targetQueue: targetQueue, notificationQueue: notificationQueue)
@@ -95,10 +135,13 @@ public class NetworkReachability {
     }
 }
 
-public extension NetworkReachability {
+extension NetworkReachability {
     // MARK: - *** Notifier methods ***
-    func startNotifier() throws -> AsyncThrowingStream<NetworkReachability, Error> {
-        guard !notifierRunning else { throw NetworkReachabilityError.alreadyRunning }
+    
+    /// Inicia el stream que se usará para notificar los cambios de red
+    /// - Returns: Stream con el tipo de red al que está conectado
+    public func startNotifier() throws -> AsyncThrowingStream<NetworkReachability, Error> {
+        guard !notifierRunning else { throw NetworkError.Reachability.alreadyRunning }
         let reachability = AsyncThrowingStream(NetworkReachability.self) { [weak self] continuation in
             continuation.onTermination = { @Sendable _ in
 //                self?.stopNotifier()
@@ -157,12 +200,12 @@ public extension NetworkReachability {
 
         if !SCNetworkReachabilitySetCallback(reachabilityRef, callback, &context) {
             stopNotifier()
-            throw NetworkReachabilityError.unableToSetCallback(SCError())
+            throw NetworkError.Reachability.unableToSetCallback(SCError())
         }
 
         if !SCNetworkReachabilitySetDispatchQueue(reachabilityRef, reachabilitySerialQueue) {
             stopNotifier()
-            throw NetworkReachabilityError.unableToSetDispatchQueue(SCError())
+            throw NetworkError.Reachability.unableToSetDispatchQueue(SCError())
         }
 
         // Perform an initial check
@@ -170,8 +213,9 @@ public extension NetworkReachability {
 
         notifierRunning = true
     }
-
-    func stopNotifier() {
+    
+    /// Permite parar el stream que notifica los cambios de red
+    public func stopNotifier() {
         defer { notifierRunning = false }
 
         SCNetworkReachabilitySetCallback(reachabilityRef, nil, nil)
@@ -180,20 +224,20 @@ public extension NetworkReachability {
         reachabilityHandler = nil
     }
 
-    var isReachable: Bool {
+    public var isReachable: Bool {
         return connection != .unavailable
     }
     
-    var isReachableViaWWAN: Bool {
+    public var isReachableViaWWAN: Bool {
         // Check we're not on the simulator, we're REACHABLE and check we're on WWAN
         return connection == .cellular
     }
 
-    var isReachableViaWiFi: Bool {
+    public var isReachableViaWiFi: Bool {
         return connection == .wifi
     }
 
-    var description: String {
+    public var description: String {
         return flags?.description ?? "unavailable flags"
     }
 }
@@ -205,7 +249,7 @@ fileprivate extension NetworkReachability {
             var flags = SCNetworkReachabilityFlags()
             if !SCNetworkReachabilityGetFlags(self.reachabilityRef, &flags) {
                 self.stopNotifier()
-                throw NetworkReachabilityError.unableToGetFlags(SCError())
+                throw NetworkError.Reachability.unableToGetFlags(SCError())
             }
             
             self.flags = flags
