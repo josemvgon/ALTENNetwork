@@ -43,7 +43,7 @@ open class NetworkRequest {
     ///   - headers: cabeceras de la petición
     ///   - query: parámetros de tipo query de la petición
     ///   - httpBody: parámetros del body de la petición
-    public convenience init(url: String,
+    public init(url: String,
                             httpMethod: NetworkHttpMethod = .get,
                             headers: [NetworkHeader]? = nil,
                             query: [NetworkQuery]? = nil,
@@ -60,7 +60,7 @@ open class NetworkRequest {
     ///   - query: parámetros de tipo query de la petición
     ///   - jsonBody: objeto `Encodable` que será transformado a `json` y añadido al body de la petición
     ///   - encoder: instancia de `JSONEncoder` usado para transformar el parámetro `jsonBody` a `json`
-    public convenience init<T: Encodable>(url: URL,
+    public init<T: Encodable>(url: URL,
                                           httpMethod: NetworkHttpMethod,
                                           headers: [NetworkHeader]? = nil,
                                           query: [NetworkQuery]? = nil,
@@ -85,7 +85,7 @@ open class NetworkRequest {
     ///   - query: parámetros de tipo query de la petición
     ///   - jsonBody: objeto `Encodable` que será transformado a `json` y añadido al body de la petición
     ///   - encoder: instancia de `JSONEncoder` usado para transformar el parámetro `jsonBody` a `json`
-    public convenience init<T: Encodable>(url: String,
+    public init<T: Encodable>(url: String,
                                           httpMethod: NetworkHttpMethod,
                                           headers: [NetworkHeader]? = nil,
                                           query: [NetworkQuery]? = nil,
